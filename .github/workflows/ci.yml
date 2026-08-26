@@ -24,5 +24,5 @@ jobs:
       - name: Verify universal executable
         run: |
           file .build/apple/Products/Release/cellar
-          lipo -verify_arch arm64 x86_64 .build/apple/Products/Release/cellar
+          lipo .build/apple/Products/Release/cellar -verify_arch arm64 x86_64
           test "$(stat -f %z .build/apple/Products/Release/cellar)" -lt 5242880
