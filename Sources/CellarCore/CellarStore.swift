@@ -50,6 +50,19 @@ public final class CellarStore {
         sqlite3_close(database)
     }
 
+    public func close() {
+        guard database != nil else { return }
+        sqlite3_close(database)
+        database = nil
+    }
+
+    public func purge() throws {
+        close()
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try FileManager.default.removeItem(at: directory)
+        }
+    }
+
     public func loadConfiguration() throws -> CellarConfiguration {
         guard FileManager.default.fileExists(atPath: configurationURL.path) else { return .default }
         return try ConfigurationCodec.decode(Data(contentsOf: configurationURL))
@@ -202,6 +215,36 @@ public final class CellarStore {
                 try bind(key, to: 1, in: statement)
                 try stepDone(statement)
             }
+        }
+    }
+
+    public func claimNotice(
+        policy: NoticePolicy,
+        now: Date,
+        signature: String,
+        calendar: Calendar = .current
+    ) throws -> Bool {
+        try execute("BEGIN IMMEDIATE")
+        do {
+            let lastShownAt = try metadata("notice-last-shown").flatMap(TimeInterval.init).map(Date.init(timeIntervalSince1970:))
+            let lastSignature = try metadata("notice-signature")
+            let shouldDisplay = NoticeGate.shouldDisplay(
+                policy: policy,
+                now: now,
+                lastShownAt: lastShownAt,
+                signature: signature,
+                lastSignature: lastSignature,
+                calendar: calendar
+            )
+            if shouldDisplay {
+                try setMetadata(String(now.timeIntervalSince1970), for: "notice-last-shown")
+                try setMetadata(signature, for: "notice-signature")
+            }
+            try execute("COMMIT")
+            return shouldDisplay
+        } catch {
+            try? execute("ROLLBACK")
+            throw error
         }
     }
 

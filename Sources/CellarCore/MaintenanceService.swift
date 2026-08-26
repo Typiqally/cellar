@@ -7,6 +7,13 @@ public protocol HomebrewDataSource {
     func startService() throws
     func stopService() throws
     func orphanedDependencies() throws -> String
+    func homebrewPrefix() throws -> String
+}
+
+public extension HomebrewDataSource {
+    func homebrewPrefix() throws -> String {
+        ProcessInfo.processInfo.environment["HOMEBREW_PREFIX"] ?? "/opt/homebrew"
+    }
 }
 
 public protocol CaskUsageProviding {

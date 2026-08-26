@@ -19,7 +19,8 @@ final class CellarApplicationTests: XCTestCase {
         XCTAssertEqual(try harness.application.run(.notice), 0)
         XCTAssertEqual(try harness.application.run(.notice), 0)
 
-        XCTAssertEqual(harness.output.text.components(separatedBy: "packages have aged").count - 1, 1)
+        XCTAssertEqual(harness.output.text.components(separatedBy: "Cellar:").count - 1, 1)
+        XCTAssertTrue(harness.output.text.contains("aged past 90 days"))
         XCTAssertTrue(harness.output.text.contains("run 'cellar report'"))
     }
 
