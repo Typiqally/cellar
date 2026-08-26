@@ -41,6 +41,7 @@ public struct MaintenanceService {
     private let eventLog: UsageEventLog
     private let homebrew: any HomebrewDataSource
     private let caskUsage: any CaskUsageProviding
+    private let signalProvider: (any PackageSignalProviding)?
     private let now: () -> Date
 
     public init(
@@ -48,12 +49,14 @@ public struct MaintenanceService {
         eventLog: UsageEventLog,
         homebrew: any HomebrewDataSource,
         caskUsage: any CaskUsageProviding = LaunchServicesCaskUsageProvider(),
+        signalProvider: (any PackageSignalProviding)? = nil,
         now: @escaping () -> Date = Date.init
     ) {
         self.store = store
         self.eventLog = eventLog
         self.homebrew = homebrew
         self.caskUsage = caskUsage
+        self.signalProvider = signalProvider
         self.now = now
     }
 
@@ -71,7 +74,7 @@ public struct MaintenanceService {
                 isPinned: package.isPinned,
                 isRunningService: runningServices.contains(package.name) || runningServices.contains(package.id),
                 isIgnored: false,
-                supportsUsageSignal: package.supportsUsageSignal,
+                supportsUsageSignal: signalProvider?.supportsUsageSignal(for: package) ?? package.supportsUsageSignal,
                 observedSince: refreshDate,
                 lastUsedAt: nil,
                 evidenceSource: nil

@@ -19,6 +19,7 @@ public final class CellarApplication {
     private let paths: CellarPaths
     private let homebrew: any HomebrewDataSource
     private let caskUsage: any CaskUsageProviding
+    private let signalProvider: (any PackageSignalProviding)?
     private let environment: [String: String]
     private let homeDirectory: URL
     private let now: () -> Date
@@ -29,6 +30,7 @@ public final class CellarApplication {
         paths: CellarPaths,
         homebrew: any HomebrewDataSource,
         caskUsage: any CaskUsageProviding = LaunchServicesCaskUsageProvider(),
+        signalProvider: (any PackageSignalProviding)? = nil,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         homeDirectory: URL = FileManager.default.homeDirectoryForCurrentUser,
         now: @escaping () -> Date = Date.init,
@@ -38,6 +40,7 @@ public final class CellarApplication {
         self.paths = paths
         self.homebrew = homebrew
         self.caskUsage = caskUsage
+        self.signalProvider = signalProvider
         self.environment = environment
         self.homeDirectory = homeDirectory
         self.now = now
@@ -226,6 +229,7 @@ public final class CellarApplication {
             eventLog: UsageEventLog(url: paths.events),
             homebrew: homebrew,
             caskUsage: caskUsage,
+            signalProvider: signalProvider,
             now: now
         ).run()
     }

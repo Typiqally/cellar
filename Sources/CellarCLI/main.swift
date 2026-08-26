@@ -27,7 +27,12 @@ do {
     let paths = CellarPaths()
     let store = try CellarStore(directory: paths.stateDirectory)
     let homebrew = try HomebrewClient.discover()
-    let application = CellarApplication(store: store, paths: paths, homebrew: homebrew)
+    let application = CellarApplication(
+        store: store,
+        paths: paths,
+        homebrew: homebrew,
+        signalProvider: FilesystemPackageSignalProvider(prefix: homebrew.inferredPrefix)
+    )
     exit(try application.run(command))
 } catch {
     let message = "cellar: error: \(error.localizedDescription)\n"

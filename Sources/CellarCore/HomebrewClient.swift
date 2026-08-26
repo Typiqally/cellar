@@ -81,6 +81,9 @@ public struct SystemProcessRunner: ProcessRunning {
 
 public final class HomebrewClient: HomebrewDataSource {
     public let brewURL: URL
+    public var inferredPrefix: String {
+        brewURL.deletingLastPathComponent().deletingLastPathComponent().path
+    }
     private let runner: any ProcessRunning
     private let baseEnvironment: [String: String]
 
