@@ -9,7 +9,8 @@ let package = Package(
         .library(name: "CellarCore", targets: ["CellarCore"]),
     ],
     targets: [
-        .target(name: "CellarCore"),
+        .systemLibrary(name: "CSQLite"),
+        .target(name: "CellarCore", dependencies: ["CSQLite"]),
         .testTarget(name: "CellarCoreTests", dependencies: ["CellarCore"]),
     ]
 )
