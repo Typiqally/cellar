@@ -7,10 +7,12 @@ let package = Package(
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "CellarCore", targets: ["CellarCore"]),
+        .executable(name: "cellar", targets: ["CellarCLI"]),
     ],
     targets: [
         .systemLibrary(name: "CSQLite"),
         .target(name: "CellarCore", dependencies: ["CSQLite"]),
+        .executableTarget(name: "CellarCLI", dependencies: ["CellarCore"]),
         .testTarget(name: "CellarCoreTests", dependencies: ["CellarCore"]),
     ]
 )
