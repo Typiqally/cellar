@@ -93,7 +93,18 @@ public final class CellarStore {
                 is_pinned = excluded.is_pinned,
                 is_running_service = excluded.is_running_service,
                 supports_usage_signal = excluded.supports_usage_signal,
-                observed_since = MIN(packages.observed_since, excluded.observed_since),
+                observed_since = CASE
+                    WHEN packages.present = 0 THEN excluded.observed_since
+                    ELSE MIN(packages.observed_since, excluded.observed_since)
+                END,
+                last_used_at = CASE
+                    WHEN packages.present = 0 THEN excluded.last_used_at
+                    ELSE packages.last_used_at
+                END,
+                evidence_source = CASE
+                    WHEN packages.present = 0 THEN excluded.evidence_source
+                    ELSE packages.evidence_source
+                END,
                 present = 1
             """
             try execute("UPDATE packages SET present = 0")

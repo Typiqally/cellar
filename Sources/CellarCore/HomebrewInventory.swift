@@ -42,8 +42,9 @@ public enum HomebrewInventoryDecoder {
             let fullToken = cask["full_token"] as? String ?? token
             let artifacts = cask["artifacts"] as? [[String: Any]] ?? []
             let appPaths = artifacts.flatMap { artifact -> [String] in
-                if let targets = artifact["target"] as? [String], artifact["app"] != nil { return targets }
                 guard let apps = artifact["app"] as? [String] else { return [] }
+                if let target = artifact["target"] as? String { return [target] }
+                if let targets = artifact["target"] as? [String] { return targets }
                 return apps.map { "/Applications/\($0)" }
             }
             let hasBinary = artifacts.contains { $0["binary"] != nil }
