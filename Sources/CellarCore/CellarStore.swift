@@ -114,6 +114,7 @@ public final class CellarStore {
                     try stepDone(statement)
                 }
             }
+            try applyPendingUsage()
             try execute("COMMIT")
         } catch {
             try? execute("ROLLBACK")
@@ -122,6 +123,13 @@ public final class CellarStore {
     }
 
     public func recordUsage(_ ownership: PackageOwnership, at date: Date, source: EvidenceSource) throws {
+        guard try applyUsage(ownership, at: date, source: source) else {
+            try savePendingUsage(ownership, at: date, source: source)
+            return
+        }
+    }
+
+    private func applyUsage(_ ownership: PackageOwnership, at date: Date, source: EvidenceSource) throws -> Bool {
         let sql = """
         UPDATE packages
         SET last_used_at = CASE
@@ -147,6 +155,56 @@ public final class CellarStore {
             try bind(ownership.id, to: 5, in: statement)
             try bind("\(ownership.kind.rawValue):%/\(escapedToken)", to: 6, in: statement)
             try stepDone(statement)
+        }
+        return sqlite3_changes(database) > 0
+    }
+
+    private func savePendingUsage(_ ownership: PackageOwnership, at date: Date, source: EvidenceSource) throws {
+        let sql = """
+        INSERT INTO pending_usage(kind, token, last_used_at, evidence_source)
+        VALUES (?, ?, ?, ?)
+        ON CONFLICT(kind, token) DO UPDATE SET
+            last_used_at = MAX(pending_usage.last_used_at, excluded.last_used_at),
+            evidence_source = CASE
+                WHEN pending_usage.last_used_at < excluded.last_used_at THEN excluded.evidence_source
+                ELSE pending_usage.evidence_source
+            END
+        """
+        try withStatement(sql) { statement in
+            try bind(ownership.kind.rawValue, to: 1, in: statement)
+            try bind(ownership.token, to: 2, in: statement)
+            try bind(date.timeIntervalSince1970, to: 3, in: statement)
+            try bind(source.rawValue, to: 4, in: statement)
+            try stepDone(statement)
+        }
+    }
+
+    private func applyPendingUsage() throws {
+        let pending = try withStatement(
+            "SELECT kind, token, last_used_at, evidence_source FROM pending_usage"
+        ) { statement in
+            var rows: [(PackageOwnership, Date, EvidenceSource)] = []
+            while sqlite3_step(statement) == SQLITE_ROW {
+                guard let kind = PackageKind(rawValue: text(at: 0, in: statement)),
+                      let timestamp = double(at: 2, in: statement),
+                      let source = EvidenceSource(rawValue: text(at: 3, in: statement)) else {
+                    throw CellarStoreError.invalidStoredValue("pending usage")
+                }
+                rows.append((
+                    PackageOwnership(kind: kind, token: text(at: 1, in: statement)),
+                    Date(timeIntervalSince1970: timestamp),
+                    source
+                ))
+            }
+            return rows
+        }
+
+        for (ownership, date, source) in pending where try applyUsage(ownership, at: date, source: source) {
+            try withStatement("DELETE FROM pending_usage WHERE kind = ? AND token = ?") { statement in
+                try bind(ownership.kind.rawValue, to: 1, in: statement)
+                try bind(ownership.token, to: 2, in: statement)
+                try stepDone(statement)
+            }
         }
     }
 
@@ -270,6 +328,15 @@ public final class CellarStore {
         )
         """)
         try execute("CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        try execute("""
+        CREATE TABLE IF NOT EXISTS pending_usage (
+            kind TEXT NOT NULL CHECK(kind IN ('formula', 'cask')),
+            token TEXT NOT NULL,
+            last_used_at REAL NOT NULL,
+            evidence_source TEXT NOT NULL,
+            PRIMARY KEY(kind, token)
+        )
+        """)
     }
 
     private func execute(_ sql: String) throws {
