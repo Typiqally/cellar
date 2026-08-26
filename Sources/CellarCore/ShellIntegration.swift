@@ -15,6 +15,7 @@ public enum ShellIntegration {
             local _cellar_prefix=${HOMEBREW_PREFIX:-/opt/homebrew}
             local _cellar_events="${CELLAR_STATE_DIR:-$HOME/Library/Application Support/Cellar}/events.log"
             [[ -d ${_cellar_events:h} ]] || return 0
+            _cellar_prefix=${_cellar_prefix:A}
 
             for _cellar_word in "${_cellar_words[@]}"; do
               case "$_cellar_word" in
@@ -43,13 +44,13 @@ public enum ShellIntegration {
               esac
               _cellar_token=${_cellar_rest%%/*}
               [[ -n "$_cellar_token" && "$_cellar_token" != *[$'\t\r\n/']* ]] || continue
-              print -r -- "1\t${EPOCHSECONDS:-0}\t$_cellar_kind\t$_cellar_token" >> "$_cellar_events"
+              print -r -- $'1\t'"${EPOCHSECONDS:-0}"$'\t'"$_cellar_kind"$'\t'"$_cellar_token" >> "$_cellar_events"
             done
           }
 
           add-zsh-hook -D preexec _cellar_preexec 2>/dev/null || true
           add-zsh-hook preexec _cellar_preexec
-          command \#(executableName) notice
+          command \#(executableName) notice 2>/dev/null || true
         fi
         """#
     }
