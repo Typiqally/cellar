@@ -48,4 +48,17 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(directoryMode & 0o777, 0o700)
         XCTAssertEqual(fileMode & 0o777, 0o600)
     }
+
+    func testNoticeClaimIsAtomicForDailyPolicy() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try CellarStore(directory: directory)
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        XCTAssertTrue(try store.claimNotice(policy: .daily, now: now, signature: "formula:jq", calendar: calendar))
+        XCTAssertFalse(try store.claimNotice(policy: .daily, now: now.addingTimeInterval(60), signature: "formula:jq", calendar: calendar))
+        XCTAssertTrue(try store.claimNotice(policy: .daily, now: now.addingTimeInterval(86_400), signature: "formula:jq", calendar: calendar))
+    }
 }
