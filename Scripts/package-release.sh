@@ -33,6 +33,9 @@ cp .build/apple/Products/Release/cellar "$package_directory/cellar"
 cp LICENSE README.md "$package_directory/"
 chmod 755 "$package_directory/cellar"
 tar -C "$stage_directory" -czf "$output_directory/$package_name.tar.gz" "$package_name"
-shasum -a 256 "$output_directory/$package_name.tar.gz" > "$output_directory/$package_name.tar.gz.sha256"
+(
+  cd "$output_directory"
+  shasum -a 256 "$package_name.tar.gz" > "$package_name.tar.gz.sha256"
+)
 
 echo "$output_directory/$package_name.tar.gz"
