@@ -27,6 +27,24 @@ eval "$(cellar init zsh)"
 
 The shell hook is opt-in and performs no per-command subprocess. `cellar setup` starts a Homebrew service that wakes periodically, refreshes the inventory, consumes pending events, and exits. There is no resident daemon.
 
+### Install with an AI coding agent
+
+Copy this prompt into an AI agent that can use your terminal:
+
+```text
+Install and configure Cellar from https://github.com/Typiqally/cellar on this Mac.
+
+1. Verify that this is macOS 14 or newer and that Homebrew and zsh are available.
+2. Run `brew install Typiqally/cellar/cellar`. If Cellar is already installed, leave it installed and continue.
+3. Run `cellar setup` to initialize its private local state and scheduled Homebrew service.
+4. Add the following line to ~/.zshrc only if an equivalent Cellar initialization is not already present. Preserve every other line and setting in the file:
+   `command -v cellar >/dev/null 2>&1 && eval "$(cellar init zsh)"`
+5. Verify the result with `cellar doctor`, `cellar status`, `brew services list`, and a fresh zsh process that confirms `_cellar_preexec` is loaded.
+6. Report what changed, the number of tracked packages, and the service status.
+
+Do not use sudo, import shell history, uninstall any package, execute a removal recommendation, or modify unrelated shell configuration. Cellar's scheduled service normally exits between runs, so a Homebrew status of `scheduled` is healthy and does not require a resident process.
+```
+
 To build the current checkout instead:
 
 ```sh
