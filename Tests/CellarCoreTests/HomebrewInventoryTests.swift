@@ -12,7 +12,7 @@ final class HomebrewInventoryTests: XCTestCase {
         XCTAssertEqual(jq.dependencies, ["formula:oniguruma"])
 
         let vscode = try XCTUnwrap(inventory.packages.first { $0.id == "cask:visual-studio-code" })
-        XCTAssertEqual(vscode.appPaths, ["/Applications/Visual Studio Code.app"])
+        XCTAssertEqual(vscode.appPaths, ["/Users/test/Applications/Visual Studio Code.app"])
         XCTAssertTrue(vscode.supportsUsageSignal)
 
         let oniguruma = try XCTUnwrap(inventory.packages.first { $0.id == "formula:oniguruma" })
@@ -54,7 +54,7 @@ final class HomebrewInventoryTests: XCTestCase {
         "depends_on": {},
         "artifacts": [{
           "app": ["Visual Studio Code.app"],
-          "target": ["/Applications/Visual Studio Code.app"]
+          "target": "/Users/test/Applications/Visual Studio Code.app"
         }]
       }]
     }

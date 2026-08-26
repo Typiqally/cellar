@@ -92,4 +92,43 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(package.lastUsedAt, usedAt)
         XCTAssertEqual(package.evidenceSource, .shell)
     }
+
+    func testReinstalledPackageStartsANewObservationWindow() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = try CellarStore(directory: directory)
+        var package = Self.package(observedSince: Date(timeIntervalSince1970: 100))
+
+        try store.replaceInventory([package])
+        try store.recordUsage(
+            PackageOwnership(kind: .formula, token: "jq"),
+            at: Date(timeIntervalSince1970: 200),
+            source: .shell
+        )
+        try store.replaceInventory([])
+        package.observedSince = Date(timeIntervalSince1970: 500)
+        try store.replaceInventory([package])
+
+        let reinstalled = try XCTUnwrap(store.packages().first)
+        XCTAssertEqual(reinstalled.observedSince, Date(timeIntervalSince1970: 500))
+        XCTAssertNil(reinstalled.lastUsedAt)
+        XCTAssertNil(reinstalled.evidenceSource)
+    }
+
+    private static func package(observedSince: Date) -> TrackedPackage {
+        TrackedPackage(
+            id: "formula:jq",
+            name: "jq",
+            kind: .formula,
+            installedOnRequest: true,
+            isLeaf: true,
+            isPinned: false,
+            isRunningService: false,
+            isIgnored: false,
+            supportsUsageSignal: true,
+            observedSince: observedSince,
+            lastUsedAt: nil,
+            evidenceSource: nil
+        )
+    }
 }
