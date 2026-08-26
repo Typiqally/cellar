@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-14
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Test with coverage
+        run: Scripts/check-coverage.sh
+      - name: Build universal release executable
+        run: xcrun swift build -c release --arch arm64 --arch x86_64
+      - name: Verify universal executable
+        run: |
+          file .build/apple/Products/Release/cellar
+          lipo -verify_arch arm64 x86_64 .build/apple/Products/Release/cellar
+          test "$(stat -f %z .build/apple/Products/Release/cellar)" -lt 5242880

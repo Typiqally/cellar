@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    timeout-minutes: 20
+    steps:
+      - name: Check out source
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      - name: Build archive and formula
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          release_version=${RELEASE_TAG#v}
+          Scripts/package-release.sh "$release_version" dist
+          Scripts/render-formula.sh \
+            "$release_version" \
+            "dist/cellar-$release_version-universal-apple-darwin.tar.gz" \
+            dist/cellar.rb
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" \
+            --verify-tag \
+            --generate-notes \
+            --title "Cellar $RELEASE_TAG" \
+            dist/cellar-*.tar.gz \
+            dist/cellar-*.tar.gz.sha256 \
+            dist/cellar.rb

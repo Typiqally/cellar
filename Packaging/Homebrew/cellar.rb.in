@@ -1,0 +1,28 @@
+class Cellar < Formula
+  desc "Find Homebrew packages that may no longer be in use"
+  homepage "https://github.com/Typiqally/cellar"
+  url "https://github.com/Typiqally/cellar/releases/download/v@VERSION@/cellar-@VERSION@-universal-apple-darwin.tar.gz"
+  sha256 "@SHA256@"
+  license "MIT"
+
+  depends_on macos: :sonoma
+
+  def install
+    bin.install "cellar"
+    generate_completions_from_executable(bin/"cellar", "completions", shells: [:zsh])
+  end
+
+  service do
+    run [opt_bin/"cellar", "maintain"]
+    run_type :interval
+    interval 21_600
+    process_type :background
+    log_path var/"log/cellar.log"
+    error_log_path var/"log/cellar.log"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/cellar --version")
+    assert_match "Cellar tracks", shell_output("#{bin}/cellar --help")
+  end
+end
